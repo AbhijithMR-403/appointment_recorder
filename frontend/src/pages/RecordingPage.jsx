@@ -1,0 +1,133 @@
+import { useState, useCallback, useEffect } from 'react'
+import { useReactMediaRecorder } from 'react-media-recorder'
+import { Header, ContactInfoCard, RecordingControls, MicrophoneInput, Footer } from '../components/recording'
+
+const formatDuration = (seconds) => {
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = seconds % 60
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
+function RecordingPage() {
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
+
+  const {
+    status,
+    startRecording,
+    stopRecording,
+    pauseRecording,
+    resumeRecording,
+    mediaBlobUrl,
+    clearBlobUrl,
+  } = useReactMediaRecorder({ audio: true })
+
+  const isRecording = status === 'recording'
+  const isPaused = status === 'paused'
+  const isStopped = status === 'stopped'
+
+  useEffect(() => {
+    startRecording()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!isRecording) return
+    const id = setInterval(() => setElapsedSeconds((s) => s + 1), 1000)
+    return () => clearInterval(id)
+  }, [isRecording])
+
+  const handlePause = useCallback(() => {
+    if (isRecording) pauseRecording()
+    else if (isPaused) resumeRecording()
+  }, [isRecording, isPaused, pauseRecording, resumeRecording])
+
+  const handleNext = useCallback(() => {
+    stopRecording()
+  }, [stopRecording])
+
+  const handleProceedSummarize = useCallback(() => {
+    // TODO: navigate or submit recording (e.g. upload blob, then go to summary)
+  }, [])
+
+  const handleCancel = useCallback(() => {
+    if (!window.confirm('Discard this recording and start over?')) return
+    stopRecording()
+    clearBlobUrl()
+    setElapsedSeconds(0)
+    setTimeout(() => startRecording(), 0)
+  }, [stopRecording, clearBlobUrl, startRecording])
+
+  const handleBackToRecording = useCallback(() => {
+    if (!window.confirm('Discard this recording and go back to record again?')) return
+    clearBlobUrl()
+    setElapsedSeconds(0)
+    startRecording()
+  }, [clearBlobUrl, startRecording])
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-slate-200 px-3 sm:px-4 md:px-8 pt-4 sm:pt-6 md:pt-8 pb-6 sm:pb-8 md:pb-10 flex flex-col items-center gap-4 sm:gap-5 md:gap-7">
+      <Header isRecording={isRecording} />
+      <div className="w-full max-w-[560px] md:max-w-[640px] bg-white rounded-xl sm:rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.04)] px-4 sm:px-7 md:px-10 py-5 sm:py-8 md:py-9 flex flex-col gap-5 sm:gap-7 md:gap-8">
+        <ContactInfoCard
+          contactName="John Smith"
+          appointmentType="Follow-up Consultation"
+          sessionDuration={formatDuration(elapsedSeconds)}
+        />
+        {!isStopped ? (
+          <>
+            <RecordingControls
+              isRecording={isRecording}
+              isPaused={isPaused}
+              onCancel={handleCancel}
+              onPause={handlePause}
+              onNext={handleNext}
+            />
+            <MicrophoneInput isActive={isRecording} />
+          </>
+        ) : (
+          mediaBlobUrl && (
+            <div className="pt-3 border-t border-slate-100 flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <span className="text-xs text-slate-400">Listen to your recording</span>
+                <audio src={mediaBlobUrl} controls className="w-full" />
+              </div>
+              <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-3">
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center gap-2 px-4 md:px-5 py-2.5 rounded-[10px] text-sm font-semibold bg-slate-100 text-slate-600 border-none cursor-pointer transition-all duration-200 hover:bg-slate-200 hover:-translate-y-px"
+                  onClick={handleBackToRecording}
+                  aria-label="Back to recording"
+                >
+                  <span className="flex items-center justify-center" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                  </span>
+                  Back
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center gap-2 px-4 md:px-5 py-2.5 rounded-[10px] text-sm md:text-[0.9rem] font-semibold bg-blue-600 text-white border-none cursor-pointer transition-all duration-200 hover:bg-blue-700 hover:-translate-y-px"
+                  onClick={handleProceedSummarize}
+                  aria-label="Proceed and summarize"
+                >
+                  <span className="flex items-center justify-center" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z"/>
+                      <path d="M5 16l1.5 2L9 17.5 7.5 19.5 9 22"/>
+                      <path d="M19 16l-1.5 2L15 17.5l1.5-2L15 14"/>
+                    </svg>
+                  </span>
+                  Proceed &amp; Summarize
+                </button>
+              </div>
+            </div>
+          )
+        )}
+      </div>
+      <Footer patientRecordId="8291" version="v2.4.1" />
+    </div>
+  )
+}
+
+export default RecordingPage

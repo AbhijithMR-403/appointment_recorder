@@ -1,0 +1,5 @@
+export { default as Header } from './Header'
+export { default as ContactInfoCard } from './ContactInfoCard'
+export { default as RecordingControls } from './RecordingControls'
+export { default as MicrophoneInput } from './MicrophoneInput'
+export { default as Footer } from './Footer'
