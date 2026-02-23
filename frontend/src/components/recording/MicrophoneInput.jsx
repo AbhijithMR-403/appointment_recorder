@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 
-const BAR_COUNT = 24
+const BAR_COUNT = 23
 const SMOOTHING = 0.25
 const MIN_HEIGHT = 0.06
-const FFT_SIZE = 512
-const GAIN = 7.5
+const FFT_SIZE = 256
+const GAIN = 7.21
 
 function MicrophoneInput({ isActive = true }) {
   const [barHeights, setBarHeights] = useState(() =>
@@ -54,7 +54,11 @@ function MicrophoneInput({ isActive = true }) {
 
         const dataArray = new Uint8Array(analyser.frequencyBinCount)
         const bins = analyser.frequencyBinCount
-        const step = Math.max(1, Math.floor(bins / BAR_COUNT))
+
+        // Only visualize the bottom 50% of the frequency spectrum
+        // (cuts off the silent super-high frequencies)
+        const activeBins = Math.floor(bins * 0.5)
+        const step = Math.max(1, Math.floor(activeBins / BAR_COUNT))
 
         const update = () => {
           if (cancelled || !analyserRef.current) return
@@ -63,7 +67,7 @@ function MicrophoneInput({ isActive = true }) {
           for (let i = 0; i < BAR_COUNT; i++) {
             let sum = 0
             const start = i * step
-            const end = Math.min(start + step, bins)
+            const end = Math.min(start + step, activeBins)
             for (let j = start; j < end; j++) sum += dataArray[j]
             const avg = (sum / (end - start)) / 255
             const target = MIN_HEIGHT + (1 - MIN_HEIGHT) * Math.min(1, avg * GAIN)
