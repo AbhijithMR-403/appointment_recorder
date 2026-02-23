@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 const BAR_COUNT = 23
 const SMOOTHING = 0.25
 const MIN_HEIGHT = 0.06
-const FFT_SIZE = 256
+const FFT_SIZE = 512
 const GAIN = 7.21
 
 function MicrophoneInput({ isActive = true }) {
