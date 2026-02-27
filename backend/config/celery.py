@@ -15,8 +15,7 @@ app.autodiscover_tasks()
 app.conf.beat_schedule = {
     'make-api-call': {
         'task': 'ghl_integration.tasks.make_refresh_token_call',
-        'schedule': 240.0, # 4 minutes
-        # 'schedule': 36000.0, # 10 hours
+        'schedule': 36000.0, # 10 hours
     },
 }
 

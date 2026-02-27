@@ -20,3 +20,22 @@ class GHLAuthCredentials(models.Model):
 
     def __str__(self):
         return f"{self.user_id} - {self.company_id}"
+
+
+class Contact(models.Model):
+    contact_id = models.CharField(max_length=100, unique=True)
+    first_name = models.CharField(max_length=100, blank=True, null=True)
+    last_name = models.CharField(max_length=100, blank=True, null=True)
+    phone = models.CharField(max_length=50, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+    dnd = models.BooleanField(default=False)
+    country = models.CharField(max_length=50, blank=True, null=True)
+    date_added = models.DateTimeField(blank=True, null=True)
+    location_id = models.CharField(max_length=255, blank=True, null=True)
+    timestamp = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name} ({self.email})"
+    

@@ -2,6 +2,8 @@ from decouple import config
 import requests
 from django.http import JsonResponse
 from django.shortcuts import redirect
+
+from ghl_integration.tasks import fetch_all_contacts_task
 from .models import GHLAuthCredentials
 import logging
 from ghl_integration import services
@@ -81,6 +83,8 @@ def tokens(request):
                 "business_phone":location_data.get("phone")
             }
         )
+        fetch_all_contacts_task.delay(response_data.get("locationId"), response_data.get("access_token"))
+
     
         location_id = response_data.get("locationId")
         access_token = response_data.get("access_token")

@@ -1,7 +1,9 @@
 import requests
 from celery import shared_task
-from ghl_integration.models import GHLAuthCredentials
 from decouple import config
+
+from ghl_integration.models import GHLAuthCredentials
+from ghl_integration.utils import fetch_all_contacts
 @shared_task
 def make_refresh_token_call():
     credentials = GHLAuthCredentials.objects.all()
@@ -37,3 +39,10 @@ def make_refresh_token_call():
                 }
             )
     
+@shared_task
+def fetch_all_contacts_task(location_id, access_token):
+    """
+    Celery task to fetch all contacts for a given location using the provided access token.
+    """
+    fetch_all_contacts(location_id, access_token)
+
