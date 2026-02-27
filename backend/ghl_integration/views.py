@@ -88,6 +88,7 @@ def tokens(request):
         return JsonResponse({
             "message": "Authentication successful",
             "access_token": response_data.get('access_token'),
+            "refresh_token": response_data.get('refresh_token'),
             "token_stored": True
         })
         

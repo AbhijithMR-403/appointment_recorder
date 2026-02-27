@@ -136,3 +136,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Rev AI Speech-to-Text (optional: set in environment)
 REV_AI_ACCESS_TOKEN = ""  # e.g. os.environ.get("REV_AI_ACCESS_TOKEN", "")
+
+
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
