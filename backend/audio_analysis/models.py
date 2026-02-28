@@ -1,11 +1,13 @@
 from django.db import models
 
 
-class TranscriptionJobLog(models.Model):
+class TranscriptionLog(models.Model):
     """Log entry for a Rev AI transcription job."""
 
     class Status(models.TextChoices):
         IN_PROGRESS = "in_progress", "In progress"
+        COMPLETED = "completed", "Completed"
+        FAILED = "failed", "Failed"
 
     job_id = models.CharField(max_length=255, unique=True, db_index=True)
     media_url = models.URLField(max_length=2048)
@@ -15,15 +17,24 @@ class TranscriptionJobLog(models.Model):
         default=Status.IN_PROGRESS,
         db_index=True,
     )
-    transcript = models.TextField(blank=True)
+    contact = models.ForeignKey(
+        "ghl_integration.Contact",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="transcription_logs",
+        db_index=True,
+    )
+    transcript = models.TextField(blank=True, help_text="Full transcription of the audio.")
+    summary = models.TextField(blank=True, help_text="Summary of the audio content.")
     failure_reason = models.CharField(max_length=512, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["-created_at"]
-        verbose_name = "Transcription job log"
-        verbose_name_plural = "Transcription job logs"
+        verbose_name = "Transcription log"
+        verbose_name_plural = "Transcription logs"
 
     def __str__(self):
         return f"{self.job_id} ({self.status})"

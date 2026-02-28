@@ -1,10 +1,12 @@
+import json
 from decouple import config
+from django.views.decorators.csrf import csrf_exempt
 import requests
 from django.http import JsonResponse
 from django.shortcuts import redirect
 
-from ghl_integration.tasks import fetch_all_contacts_task
-from .models import GHLAuthCredentials
+from ghl_integration.tasks import fetch_all_contacts_task, handle_webhook_event
+from .models import GHLAuthCredentials, WebhookLog
 import logging
 from ghl_integration import services
 
@@ -61,7 +63,10 @@ def tokens(request):
     try:
         response_data = response.json()
         if not response_data:
-            return
+            return JsonResponse({
+                "error": "Invalid or empty response from token API",
+                "status_code": response.status_code,
+            }, status=502)
 
         data = services.get_location_name(location_id=response_data.get("locationId"), access_token=response_data.get('access_token'))
         location_data = data.get("location")
@@ -102,4 +107,19 @@ def tokens(request):
             "status_code": response.status_code,
             "response_text": response.text[:500]
         }, status=500)
+    
+
+@csrf_exempt
+def webhook_handler(request):
+    if request.method != "POST":
+        return JsonResponse({"message": "Method not allowed"}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        WebhookLog.objects.create(data=data)
+        event_type = data.get("type")
+        handle_webhook_event.delay(data, event_type)
+        return JsonResponse({"message":"Webhook received"}, status=200)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
     

@@ -2,6 +2,7 @@ import requests
 from celery import shared_task
 from decouple import config
 
+from ghl_integration.helpers import create_or_update_contact, delete_contact
 from ghl_integration.models import GHLAuthCredentials
 from ghl_integration.utils import fetch_all_contacts
 @shared_task
@@ -46,3 +47,14 @@ def fetch_all_contacts_task(location_id, access_token):
     """
     fetch_all_contacts(location_id, access_token)
 
+
+
+@shared_task
+def handle_webhook_event(data, event_type):
+    try:
+        if event_type in ["ContactCreate", "ContactUpdate"]:
+            create_or_update_contact(data)
+        elif event_type == "ContactDelete":
+            delete_contact(data)
+    except Exception as e:
+        print(f"Error handling webhook event: {str(e)}")

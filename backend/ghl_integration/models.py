@@ -39,3 +39,10 @@ class Contact(models.Model):
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.email})"
     
+
+class WebhookLog(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    data = models.JSONField(null=True, blank=True)
+
+    def __str__(self):
+        return f"WebhookLog {self.id} at {self.created_at}"

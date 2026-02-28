@@ -6,7 +6,7 @@ Submit a job and log it; transcript or failure is delivered via webhook callback
 
 import logging
 
-from .models import TranscriptionJobLog
+from .models import TranscriptionLog
 from .service.revai import RevAIClient
 
 logger = logging.getLogger(__name__)
@@ -22,10 +22,10 @@ class TranscriptionService:
         job = client.submit_job(media_url=media_url, timestamps=False)
         job_id = job["id"]
 
-        TranscriptionJobLog.objects.create(
+        TranscriptionLog.objects.create(
             job_id=job_id,
             media_url=media_url,
-            status=TranscriptionJobLog.Status.IN_PROGRESS,
+            status=TranscriptionLog.Status.IN_PROGRESS,
         )
 
         return job_id
