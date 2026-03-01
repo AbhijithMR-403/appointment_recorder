@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import auth_connect, tokens, callback, webhook_handler
+from .views import auth_connect, tokens, callback, webhook_handler, ContactListView
 
 
 urlpatterns = [
@@ -7,4 +7,5 @@ urlpatterns = [
     path("auth/tokens/", tokens, name="oauth_tokens"),
     path("auth/callback/", callback, name="oauth_callback"),
     path("webhook/", webhook_handler, name="webhook"),
+    path("contacts/", ContactListView.as_view(), name="contact_list"),
 ]

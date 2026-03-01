@@ -4,9 +4,14 @@ from django.views.decorators.csrf import csrf_exempt
 import requests
 from django.http import JsonResponse
 from django.shortcuts import redirect
+from django.db.models import Q
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from ghl_integration.tasks import fetch_all_contacts_task, handle_webhook_event
-from .models import GHLAuthCredentials, WebhookLog
+from .models import GHLAuthCredentials, WebhookLog, Contact
+from .serializers import ContactSerializer
 import logging
 from ghl_integration import services
 
@@ -122,4 +127,32 @@ def webhook_handler(request):
         return JsonResponse({"message":"Webhook received"}, status=200)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
+
+class ContactListView(APIView):
+    """
+    GET: List contacts with optional filters.
+    Query params:
+        - location_id: filter by location ID
+        - name: search in first name and last name (case-insensitive partial match)
+    """
+
+    def get(self, request):
+        queryset = Contact.objects.all().order_by("-date_added", "-created_at")
+
+        location_id = request.query_params.get("location_id", "").strip()
+        if location_id:
+            queryset = queryset.filter(location_id=location_id)
+
+        name = request.query_params.get("name", "").strip()
+        if name:
+            queryset = queryset.filter(
+                Q(first_name__icontains=name) | Q(last_name__icontains=name)
+            )
+
+        serializer = ContactSerializer(queryset, many=True)
+        return Response(
+            {"count": queryset.count(), "contacts": serializer.data},
+            status=status.HTTP_200_OK,
+        )
     

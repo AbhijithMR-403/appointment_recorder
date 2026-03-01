@@ -1,10 +1,9 @@
-import requests
-from ghl_integration.models import GHLAuthCredentials
-from ghl_integration.utils import fetch_contacts_locations
+from django.utils.dateparse import parse_datetime
 from ghl_integration.models import Contact
 
 def create_or_update_contact(data):
     contact_id = data.get("id")
+    date_added = parse_datetime(data.get("dateAdded")) if data.get("dateAdded") else None
     contact, created = Contact.objects.update_or_create(
         contact_id=contact_id,
         defaults={
@@ -14,12 +13,10 @@ def create_or_update_contact(data):
             "phone": data.get("phone"),
             "dnd": data.get("dnd", False),
             "country": data.get("country"),
-            "date_added": data.get("dateAdded"),
+            "date_added": date_added,
             "location_id": data.get("locationId"),
         }
     )
-    cred = GHLAuthCredentials.objects.first()
-    fetch_contacts_locations([data], data.get("locationId"), cred.access_token)
     print("Contact created/updated:", contact_id)
 
 def delete_contact(data):
@@ -30,3 +27,5 @@ def delete_contact(data):
         print("Contact deleted:", contact_id)
     except Contact.DoesNotExist:
         print("Contact not found for deletion:", contact_id)
+
+

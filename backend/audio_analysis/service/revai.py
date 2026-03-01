@@ -10,32 +10,31 @@ Submits jobs and optionally polls/retrieves transcription results.
 """
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 import requests
-from django.conf import settings
+from decouple import config
 
 logger = logging.getLogger(__name__)
 
 REV_AI_BASE_URL = "https://api.rev.ai/speechtotext/v1"
-REV_AI_WEBHOOK_URL = "https://webhook.site/72500462-0db9-4cad-9e6e-8d85466b2fe3"
+REV_AI_WEBHOOK_URL = f"{config('BASE_URL')}/api/audio_analysis/rev/callback/"
 
 class RevAIClient:
     """Client for Rev AI Speech-to-Text API."""
 
     def __init__(
         self,
-        access_token: Optional[str] = None,
+        access_token: str | None = None,
         base_url: str = REV_AI_BASE_URL,
         notification_url: str = REV_AI_WEBHOOK_URL,
     ):
         self.base_url = base_url.rstrip("/")
-        self.access_token = access_token or getattr(
-            settings, "REV_AI_ACCESS_TOKEN", None
-        )
+        self.access_token = access_token or config("REV_AI_ACCESS_TOKEN")
         if not self.access_token:
-            raise ValueError("Rev AI access token is required (REV_AI_ACCESS_TOKEN or pass access_token).")
+            raise ValueError("Rev AI access token is required.")
         self.notification_url = notification_url
+
     def _headers(self) -> dict[str, str]:
         return {
             "Content-Type": "application/json",

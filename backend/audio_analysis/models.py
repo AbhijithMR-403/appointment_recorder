@@ -6,7 +6,7 @@ class TranscriptionLog(models.Model):
 
     class Status(models.TextChoices):
         IN_PROGRESS = "in_progress", "In progress"
-        COMPLETED = "completed", "Completed"
+        TRANSCRIBED = "transcribed", "Transcribed"
         FAILED = "failed", "Failed"
 
     job_id = models.CharField(max_length=255, unique=True, db_index=True)
@@ -19,9 +19,7 @@ class TranscriptionLog(models.Model):
     )
     contact = models.ForeignKey(
         "ghl_integration.Contact",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+        on_delete=models.CASCADE,
         related_name="transcription_logs",
         db_index=True,
     )

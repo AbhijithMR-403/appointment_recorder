@@ -2,6 +2,9 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from audio_analysis.transcription import TranscriptionService
+from ghl_integration.models import Contact
+
 from .models import AudioFile
 from .serializers import AudioFileSerializer, UploadAudioSerializer
 
@@ -13,6 +16,7 @@ class UploadAudioView(APIView):
         serializer = UploadAudioSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         uploaded_file = serializer.validated_data["file"]
+        contact_id = serializer.validated_data.get("contact_id")
 
         audio = AudioFile.objects.create(
             file=uploaded_file,
@@ -22,7 +26,20 @@ class UploadAudioView(APIView):
         )
 
         output_serializer = AudioFileSerializer(audio, context={"request": request})
-        return Response(output_serializer.data, status=status.HTTP_201_CREATED)
+        data = output_serializer.data
+
+        try:    
+            contact = Contact.objects.get(contact_id=contact_id)
+            job_id = TranscriptionService.transcribe(
+                media_url=data.get("file_url"),
+                contact=contact,
+            )
+            data["transcription_job_id"] = job_id
+        except Exception as exc:
+            # If transcription fails to start, still return the uploaded audio info
+            data["transcription_error"] = str(exc)
+
+        return Response(data, status=status.HTTP_201_CREATED)
 
 
 class AudioFileListView(APIView):
