@@ -3,6 +3,8 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useReactMediaRecorder } from 'react-media-recorder'
 import { Header, ContactInfoCard, RecordingControls, MicrophoneInput, Footer } from '../components/recording'
 
+const CONTACTS_API_BASE = 'http://localhost:8000/api/ghl_integration/contacts/'
+
 const formatDuration = (seconds) => {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
@@ -19,7 +21,38 @@ function RecordingPage() {
 
   const hasAnyContactInfo = !!contactFromState || !!contactIdFromQuery
 
+  const [fetchedContact, setFetchedContact] = useState(null)
+  const [contactFetchStatus, setContactFetchStatus] = useState(null) // null | 'loading' | 'success' | 'invalid'
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
+
+  const needsFetch = !!contactIdFromQuery && !contactFromState
+  const hasValidContact =
+    !!contactFromState || (!!contactIdFromQuery && !!fetchedContact)
+  const invalidContactId = needsFetch && contactFetchStatus === 'invalid'
+  const contactStillLoading = needsFetch && contactFetchStatus === 'loading'
+
+  // When only contact_id is in URL, fetch contact from API
+  useEffect(() => {
+    if (!contactIdFromQuery || contactFromState) return
+    const url = `${CONTACTS_API_BASE}?contact_id=${encodeURIComponent(contactIdFromQuery)}`
+    setContactFetchStatus('loading')
+    fetch(url)
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to fetch contact')
+        return res.json()
+      })
+      .then((data) => {
+        const list = data?.contacts
+        if (Array.isArray(list) && list.length > 0) {
+          setFetchedContact(list[0])
+          setContactFetchStatus('success')
+        } else {
+          setFetchedContact(null)
+          setContactFetchStatus('invalid')
+        }
+      })
+      .catch(() => setContactFetchStatus('invalid'))
+  }, [contactIdFromQuery, contactFromState])
 
   const {
     status,
@@ -42,11 +75,11 @@ function RecordingPage() {
     }
   }, [hasAnyContactInfo, navigate])
 
-  // Start recording once we have any valid contact information
+  // Start recording only when we have a resolved contact (from state or successful fetch)
   useEffect(() => {
-    if (!hasAnyContactInfo) return
+    if (!hasValidContact) return
     startRecording()
-  }, [hasAnyContactInfo, startRecording])
+  }, [hasValidContact, startRecording])
 
   useEffect(() => {
     if (!isRecording) return
@@ -90,13 +123,38 @@ function RecordingPage() {
     )
   }
 
-  const resolvedContactId =
-    (contactFromState && (contactFromState.contact_id || contactFromState.id)) || contactIdFromQuery || 'N/A'
+  if (invalidContactId) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-slate-50 px-4">
+        <p className="text-lg font-semibold text-red-600">Invalid contact</p>
+        <p className="text-sm text-slate-600 text-center max-w-md">
+          No contact found for ID <strong className="font-mono text-slate-800">{contactIdFromQuery}</strong>. Please check the link or select a contact from the home page.
+        </p>
+        <button
+          type="button"
+          onClick={() => navigate('/', { replace: true })}
+          className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
+        >
+          Back to contact selection
+        </button>
+      </div>
+    )
+  }
 
-  const contactFullName =
-    (contactFromState &&
-      [contactFromState.first_name, contactFromState.last_name].filter(Boolean).join(' ')) ||
-    'Unknown contact'
+  if (contactStillLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <p className="text-sm text-slate-600">Loading contact…</p>
+      </div>
+    )
+  }
+
+  const displayContact = contactFromState || fetchedContact
+  const resolvedContactId =
+    (displayContact && (displayContact.contact_id || displayContact.id)) || contactIdFromQuery || 'N/A'
+  const contactFullName = displayContact
+    ? ([displayContact.first_name, displayContact.last_name].filter(Boolean).join(' ') || 'Unknown contact')
+    : 'Unknown contact'
   const contactId = resolvedContactId
 
   return (

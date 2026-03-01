@@ -145,6 +145,9 @@ class ContactListView(APIView):
             queryset = queryset.filter(location_id=location_id)
 
         name = request.query_params.get("name", "").strip()
+        contact_id = request.query_params.get("contact_id", "").strip()
+        if contact_id:
+            queryset = queryset.filter(contact_id=contact_id)
         if name:
             queryset = queryset.filter(
                 Q(first_name__icontains=name) | Q(last_name__icontains=name)
