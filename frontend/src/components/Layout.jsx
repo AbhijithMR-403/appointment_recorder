@@ -8,8 +8,6 @@ function Layout() {
           <Link to="/">Home</Link>
           {' | '}
           <Link to="/about">About</Link>
-          {' | '}
-          <Link to="/recording">Recording</Link>
         </nav>
       </header>
       <main>

@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useReactMediaRecorder } from 'react-media-recorder'
 import { Header, ContactInfoCard, RecordingControls, MicrophoneInput, Footer } from '../components/recording'
 
@@ -10,6 +11,14 @@ const formatDuration = (seconds) => {
 }
 
 function RecordingPage() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const contactFromState = location.state?.contact
+  const contactIdFromQuery = searchParams.get('contact_id')
+
+  const hasAnyContactInfo = !!contactFromState || !!contactIdFromQuery
+
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
 
   const {
@@ -26,9 +35,18 @@ function RecordingPage() {
   const isPaused = status === 'paused'
   const isStopped = status === 'stopped'
 
+  // Redirect back to contact selection if no contact information was provided
   useEffect(() => {
+    if (!hasAnyContactInfo) {
+      navigate('/', { replace: true })
+    }
+  }, [hasAnyContactInfo, navigate])
+
+  // Start recording once we have any valid contact information
+  useEffect(() => {
+    if (!hasAnyContactInfo) return
     startRecording()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [hasAnyContactInfo, startRecording])
 
   useEffect(() => {
     if (!isRecording) return
@@ -64,13 +82,30 @@ function RecordingPage() {
     startRecording()
   }, [clearBlobUrl, startRecording])
 
+  if (!hasAnyContactInfo) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <p className="text-sm text-slate-600">Redirecting to contact selection…</p>
+      </div>
+    )
+  }
+
+  const resolvedContactId =
+    (contactFromState && (contactFromState.contact_id || contactFromState.id)) || contactIdFromQuery || 'N/A'
+
+  const contactFullName =
+    (contactFromState &&
+      [contactFromState.first_name, contactFromState.last_name].filter(Boolean).join(' ')) ||
+    'Unknown contact'
+  const contactId = resolvedContactId
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-slate-200 px-3 sm:px-4 md:px-8 pt-4 sm:pt-6 md:pt-8 pb-6 sm:pb-8 md:pb-10 flex flex-col items-center gap-4 sm:gap-5 md:gap-7">
       <Header isRecording={isRecording} />
       <div className="w-full max-w-[560px] md:max-w-[640px] bg-white rounded-xl sm:rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.04)] px-4 sm:px-7 md:px-10 py-5 sm:py-8 md:py-9 flex flex-col gap-5 sm:gap-7 md:gap-8">
         <ContactInfoCard
-          contactName="John Smith"
-          appointmentType="Follow-up Consultation"
+          contactName={contactFullName}
+          appointmentType={`Contact ID: ${contactId}`}
           sessionDuration={formatDuration(elapsedSeconds)}
         />
         {!isStopped ? (
@@ -125,7 +160,7 @@ function RecordingPage() {
           )
         )}
       </div>
-      <Footer patientRecordId="8291" version="v2.4.1" />
+      <Footer patientRecordId={contactId} version="v2.4.1" />
     </div>
   )
 }
