@@ -4,8 +4,11 @@ from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
+from rest_framework.views import APIView
+from rest_framework.response import Response
 
 from .models import TranscriptionLog
+from .serializers import TranscriptionLogSerializer
 from .tasks import analyze_transcription_task
 
 
@@ -55,3 +58,23 @@ class RevCallbackView(View):
         return JsonResponse(
             {"success": True, "action": "updated", "job_id": job_id}
         )
+
+
+class TranscriptionLogListView(APIView):
+    """List transcription logs filtered by status and/or contact, sorted by created_at."""
+
+    def get(self, request):
+        queryset = TranscriptionLog.objects.all().order_by("-created_at")
+        status_filter = request.query_params.get("status")
+        contact_id_filter = request.query_params.get("contact_id")
+        if status_filter:
+            if status_filter not in TranscriptionLog.Status.values:
+                return Response(
+                    {"error": f"Invalid status. Must be one of: {list(TranscriptionLog.Status.values)}"},
+                    status=400,
+                )
+            queryset = queryset.filter(status=status_filter)
+        if contact_id_filter:
+            queryset = queryset.filter(contact__contact_id=contact_id_filter)
+        serializer = TranscriptionLogSerializer(queryset, many=True)
+        return Response(serializer.data)
