@@ -202,3 +202,4 @@ def sync_contacts_to_db(contact_data):
     print(f"{deleted_count} contacts deleted as they were not present in the latest data.")
 
 
+
