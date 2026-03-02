@@ -11,6 +11,12 @@ class TranscriptionLog(models.Model):
 
     job_id = models.CharField(max_length=255, unique=True, db_index=True)
     media_url = models.URLField(max_length=2048)
+    audio_file = models.ForeignKey(
+        "audio_core.AudioFile",
+        on_delete=models.CASCADE,
+        related_name="transcription_logs",
+        db_index=True,
+    )
     status = models.CharField(
         max_length=20,
         choices=Status.choices,

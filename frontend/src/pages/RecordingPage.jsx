@@ -4,6 +4,7 @@ import { useReactMediaRecorder } from 'react-media-recorder'
 import { Header, ContactInfoCard, RecordingControls, MicrophoneInput, Footer } from '../components/recording'
 
 const CONTACTS_API_BASE = 'http://localhost:8000/api/ghl_integration/contacts/'
+const AUDIO_UPLOAD_URL = 'http://localhost:8000/api/audio/upload/'
 
 const formatDuration = (seconds) => {
   const h = Math.floor(seconds / 3600)
@@ -24,6 +25,8 @@ function RecordingPage() {
   const [fetchedContact, setFetchedContact] = useState(null)
   const [contactFetchStatus, setContactFetchStatus] = useState(null) // null | 'loading' | 'success' | 'invalid'
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
+  const [uploadStatus, setUploadStatus] = useState(null) // null | 'uploading' | 'success' | 'error'
+  const [uploadError, setUploadError] = useState(null)
 
   const needsFetch = !!contactIdFromQuery && !contactFromState
   const hasValidContact =
@@ -98,9 +101,31 @@ function RecordingPage() {
     stopRecording()
   }, [stopRecording])
 
-  const handleProceedSummarize = useCallback(() => {
-    // TODO: navigate or submit recording (e.g. upload blob, then go to summary)
-  }, [])
+  const handleProceedSummarize = useCallback(async (contactIdToUse) => {
+    if (!mediaBlobUrl || !contactIdToUse) return
+    setUploadStatus('uploading')
+    setUploadError(null)
+    try {
+      const response = await fetch(mediaBlobUrl)
+      const blob = await response.blob()
+      const file = new File([blob], 'recording.webm', { type: blob.type || 'audio/webm' })
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('contact_id', String(contactIdToUse))
+      const uploadRes = await fetch(AUDIO_UPLOAD_URL, {
+        method: 'POST',
+        body: formData,
+      })
+      if (!uploadRes.ok) {
+        const errText = await uploadRes.text()
+        throw new Error(errText || `Upload failed: ${uploadRes.status}`)
+      }
+      setUploadStatus('success')
+    } catch (err) {
+      setUploadError(err?.message || 'Upload failed')
+      setUploadStatus('error')
+    }
+  }, [mediaBlobUrl])
 
   const handleCancel = useCallback(() => {
     if (!window.confirm('Discard this recording and start over?')) return
@@ -186,6 +211,11 @@ function RecordingPage() {
                 <span className="text-xs text-slate-400">Listen to your recording</span>
                 <audio src={mediaBlobUrl} controls className="w-full" />
               </div>
+{uploadError && (
+                <p className="text-sm text-red-600 text-center" role="alert">
+                  {uploadError}
+                </p>
+              )}
               <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-3">
                 <button
                   type="button"
@@ -202,18 +232,28 @@ function RecordingPage() {
                 </button>
                 <button
                   type="button"
-                  className="inline-flex items-center justify-center gap-2 px-4 md:px-5 py-2.5 rounded-[10px] text-sm md:text-[0.9rem] font-semibold bg-blue-600 text-white border-none cursor-pointer transition-all duration-200 hover:bg-blue-700 hover:-translate-y-px"
-                  onClick={handleProceedSummarize}
+                  className="inline-flex items-center justify-center gap-2 px-4 md:px-5 py-2.5 rounded-[10px] text-sm md:text-[0.9rem] font-semibold bg-blue-600 text-white border-none cursor-pointer transition-all duration-200 hover:bg-blue-700 hover:-translate-y-px disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                  onClick={() => handleProceedSummarize(contactId)}
+                  disabled={uploadStatus === 'uploading'}
                   aria-label="Proceed and summarize"
                 >
-                  <span className="flex items-center justify-center" aria-hidden="true">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z"/>
-                      <path d="M5 16l1.5 2L9 17.5 7.5 19.5 9 22"/>
-                      <path d="M19 16l-1.5 2L15 17.5l1.5-2L15 14"/>
-                    </svg>
-                  </span>
-                  Proceed &amp; Summarize
+                  {uploadStatus === 'uploading' ? (
+                    <>
+                      <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" aria-hidden="true" />
+                      Uploading…
+                    </>
+                  ) : (
+                    <>
+                      <span className="flex items-center justify-center" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z"/>
+                          <path d="M5 16l1.5 2L9 17.5 7.5 19.5 9 22"/>
+                          <path d="M19 16l-1.5 2L15 17.5l1.5-2L15 14"/>
+                        </svg>
+                      </span>
+                      Proceed &amp; Summarize
+                    </>
+                  )}
                 </button>
               </div>
             </div>

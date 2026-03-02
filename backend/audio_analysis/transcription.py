@@ -25,6 +25,7 @@ class TranscriptionService:
         media_url: str,
         contact: Contact,
         access_token: str | None = None,
+        audio_file=None,
     ) -> str:
         """Submit a transcription job. Result comes via webhook callback."""
         client = None
@@ -40,6 +41,7 @@ class TranscriptionService:
             media_url=media_url,
             status=TranscriptionLog.Status.IN_PROGRESS,
             contact=contact,
+            audio_file=audio_file,
         )
 
         return job_id

@@ -33,6 +33,7 @@ class UploadAudioView(APIView):
             job_id = TranscriptionService.transcribe(
                 media_url=data.get("file_url"),
                 contact=contact,
+                audio_file=audio,
             )
             data["transcription_job_id"] = job_id
         except Exception as exc:
