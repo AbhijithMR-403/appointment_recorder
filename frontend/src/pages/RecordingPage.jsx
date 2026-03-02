@@ -6,12 +6,23 @@ import { apiUrl } from '../api'
 
 const CONTACTS_API_BASE = apiUrl('/api/ghl_integration/contacts/')
 const AUDIO_UPLOAD_URL = apiUrl('/api/audio/upload/')
+const TRANSCRIPTION_LOGS_API = apiUrl('/api/audio_analysis/transcription-logs/')
 
 const formatDuration = (seconds) => {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
   const s = seconds % 60
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
+const formatDateTime = (isoString) => {
+  if (!isoString) return '—'
+  const d = new Date(isoString)
+  if (Number.isNaN(d.getTime())) return isoString
+  return d.toLocaleString(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  })
 }
 
 function RecordingPage() {
@@ -28,6 +39,12 @@ function RecordingPage() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [uploadStatus, setUploadStatus] = useState(null) // null | 'uploading' | 'success' | 'error'
   const [uploadError, setUploadError] = useState(null)
+  const [pastRecordingsModalOpen, setPastRecordingsModalOpen] = useState(false)
+  const [pastRecordings, setPastRecordings] = useState([])
+  const [pastRecordingsLoading, setPastRecordingsLoading] = useState(false)
+  const [pastRecordingsError, setPastRecordingsError] = useState(null)
+  const [minimizedLogIds, setMinimizedLogIds] = useState(() => new Set())
+  const [copiedLogField, setCopiedLogField] = useState(null) // '{logId}-transcript' | '{logId}-summary'
 
   const needsFetch = !!contactIdFromQuery && !contactFromState
   const hasValidContact =
@@ -149,6 +166,61 @@ function RecordingPage() {
     navigate('/', { replace: true })
   }, [isRecording, isPaused, mediaBlobUrl, navigate])
 
+  const openPastRecordingsModal = useCallback(() => {
+    setPastRecordingsModalOpen(true)
+    setPastRecordingsError(null)
+    setPastRecordings([])
+  }, [])
+
+  const closePastRecordingsModal = useCallback(() => {
+    setPastRecordingsModalOpen(false)
+    setPastRecordingsError(null)
+    setMinimizedLogIds(new Set())
+    setCopiedLogField(null)
+  }, [])
+
+  const toggleLogMinimized = useCallback((logId) => {
+    setMinimizedLogIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(logId)) next.delete(logId)
+      else next.add(logId)
+      return next
+    })
+  }, [])
+
+  const copyLogField = useCallback(async (log, field) => {
+    const text = field === 'transcript' ? (log.transcript || '') : (log.summary || '')
+    if (!text) return
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedLogField(`${log.id}-${field}`)
+      setTimeout(() => setCopiedLogField(null), 2000)
+    } catch (_) {
+      // ignore
+    }
+  }, [])
+
+  // Fetch past transcription logs when modal opens
+  const resolvedContactIdForApi =
+    contactIdFromQuery ||
+    contactFromState?.contact_id ||
+    contactFromState?.id ||
+    fetchedContact?.contact_id ||
+    fetchedContact?.id
+  useEffect(() => {
+    if (!pastRecordingsModalOpen || !resolvedContactIdForApi) return
+    setPastRecordingsLoading(true)
+    const url = `${TRANSCRIPTION_LOGS_API}?contact_id=${encodeURIComponent(resolvedContactIdForApi)}`
+    fetch(url)
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to load past recordings')
+        return res.json()
+      })
+      .then((data) => setPastRecordings(Array.isArray(data) ? data : []))
+      .catch((e) => setPastRecordingsError(e?.message || 'Failed to load'))
+      .finally(() => setPastRecordingsLoading(false))
+  }, [pastRecordingsModalOpen, resolvedContactIdForApi])
+
   if (!hasAnyContactInfo) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 pb-[env(safe-area-inset-bottom)]">
@@ -191,15 +263,31 @@ function RecordingPage() {
     : 'Unknown contact'
   const contactId = resolvedContactId
 
+  const statusLabel = (statusValue) => {
+    if (statusValue === 'transcribed') return 'Completed'
+    if (statusValue === 'in_progress') return 'In progress'
+    if (statusValue === 'failed') return 'Failed'
+    return statusValue || '—'
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-slate-200 px-3 sm:px-4 md:px-8 pt-4 sm:pt-6 md:pt-8 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pb-8 md:pb-10 flex flex-col items-center gap-4 sm:gap-5 md:gap-7">
       <Header isRecording={isRecording} isPaused={isPaused} onBackToContactSelection={handleBackToContactSelection} />
       <div className="w-full max-w-[560px] md:max-w-[640px] bg-white rounded-xl sm:rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.04)] px-4 sm:px-7 md:px-10 py-5 sm:py-8 md:py-9 flex flex-col gap-5 sm:gap-7 md:gap-8">
-        <ContactInfoCard
-          contactName={contactFullName}
-          appointmentType={`Contact ID: ${contactId}`}
-          sessionDuration={formatDuration(elapsedSeconds)}
-        />
+        <div className="flex flex-col gap-2">
+          <ContactInfoCard
+            contactName={contactFullName}
+            appointmentType={`Contact ID: ${contactId}`}
+            sessionDuration={formatDuration(elapsedSeconds)}
+          />
+          <button
+            type="button"
+            onClick={openPastRecordingsModal}
+            className="text-sm text-blue-600 hover:text-blue-700 font-medium self-start cursor-pointer"
+          >
+            View past recordings
+          </button>
+        </div>
         {!isStopped ? (
           <>
             <RecordingControls
@@ -267,6 +355,165 @@ function RecordingPage() {
           )
         )}
       </div>
+
+      {/* Past recordings modal */}
+      {pastRecordingsModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          onClick={(e) => e.target === e.currentTarget && closePastRecordingsModal()}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="past-recordings-title"
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-slate-200">
+              <h2 id="past-recordings-title" className="text-lg font-semibold text-slate-800">
+                Past recordings
+              </h2>
+              <button
+                type="button"
+                onClick={closePastRecordingsModal}
+                className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                aria-label="Close"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1 px-4 sm:px-6 py-4">
+              {pastRecordingsLoading && (
+                <p className="text-sm text-slate-500 py-6 text-center">Loading…</p>
+              )}
+              {pastRecordingsError && (
+                <p className="text-sm text-red-600 py-4" role="alert">{pastRecordingsError}</p>
+              )}
+              {!pastRecordingsLoading && !pastRecordingsError && pastRecordings.length === 0 && (
+                <p className="text-sm text-slate-500 py-6 text-center">No past recordings for this contact.</p>
+              )}
+              {!pastRecordingsLoading && pastRecordings.length > 0 && (
+                <ul className="space-y-4">
+                  {pastRecordings.map((log) => {
+                    const isMinimized = minimizedLogIds.has(log.id)
+                    return (
+                      <li
+                        key={log.id}
+                        className="border border-slate-200 rounded-lg overflow-hidden bg-slate-50/50"
+                      >
+                        <div className="flex items-center justify-between gap-2 p-4 pb-2">
+                          <div className="flex flex-wrap items-center gap-2 min-w-0">
+                            <time className="text-xs font-medium text-slate-600 shrink-0" dateTime={log.created_at}>
+                              {formatDateTime(log.created_at)}
+                            </time>
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium shrink-0 ${
+                                log.status === 'transcribed'
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : log.status === 'failed'
+                                    ? 'bg-red-100 text-red-800'
+                                    : 'bg-amber-100 text-amber-800'
+                              }`}
+                            >
+                              {statusLabel(log.status)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => toggleLogMinimized(log.id)}
+                              className="p-2 rounded-lg text-slate-500 hover:bg-slate-200 hover:text-slate-700"
+                              aria-label={isMinimized ? 'Expand' : 'Minimize'}
+                              title={isMinimized ? 'Expand' : 'Minimize'}
+                            >
+                              {isMinimized ? (
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <polyline points="6 9 12 15 18 9" />
+                                </svg>
+                              ) : (
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <polyline points="18 15 12 9 6 15" />
+                                </svg>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                        {!isMinimized && (
+                          <div className="px-4 pb-4 pt-0">
+                            {log.status === 'failed' && log.failure_reason && (
+                              <p className="text-sm text-red-700 mb-2">
+                                <span className="font-medium">Failure: </span>
+                                {log.failure_reason}
+                              </p>
+                            )}
+                            {log.transcript && (
+                              <div className="mb-2">
+                                <div className="flex items-center justify-between gap-2 mb-1">
+                                  <p className="text-xs font-medium text-slate-500">Transcript</p>
+                                  <button
+                                    type="button"
+                                    onClick={() => copyLogField(log, 'transcript')}
+                                    className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 hover:text-slate-700"
+                                    aria-label="Copy transcript"
+                                    title="Copy transcript"
+                                  >
+                                    {copiedLogField === `${log.id}-transcript` ? (
+                                      <span className="text-xs font-medium text-emerald-600">Copied!</span>
+                                    ) : (
+                                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                      </svg>
+                                    )}
+                                  </button>
+                                </div>
+                                <p className="text-sm text-slate-800 whitespace-pre-wrap">{log.transcript}</p>
+                              </div>
+                            )}
+                            {log.summary && (
+                              <div className="mb-2">
+                                <div className="flex items-center justify-between gap-2 mb-1">
+                                  <p className="text-xs font-medium text-slate-500">Summary</p>
+                                  <button
+                                    type="button"
+                                    onClick={() => copyLogField(log, 'summary')}
+                                    className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 hover:text-slate-700"
+                                    aria-label="Copy summary"
+                                    title="Copy summary"
+                                  >
+                                    {copiedLogField === `${log.id}-summary` ? (
+                                      <span className="text-xs font-medium text-emerald-600">Copied!</span>
+                                    ) : (
+                                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                      </svg>
+                                    )}
+                                  </button>
+                                </div>
+                                <p className="text-sm text-slate-800 whitespace-pre-wrap">{log.summary}</p>
+                              </div>
+                            )}
+                            {!log.transcript && !log.summary && log.status !== 'failed' && log.status !== 'in_progress' && (
+                              <p className="text-sm text-slate-500">No transcript or summary yet.</p>
+                            )}
+                            {log.status === 'in_progress' && !log.transcript && (
+                              <p className="text-sm text-slate-500">Transcription in progress…</p>
+                            )}
+                          </div>
+                        )}
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* <Footer patientRecordId={contactId} version="v2.4.1" /> */}
     </div>
   )
