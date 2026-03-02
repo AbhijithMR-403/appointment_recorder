@@ -3,7 +3,6 @@ import Layout from '../components/Layout'
 import HomePage from '../pages/HomePage'
 import AboutPage from '../pages/AboutPage'
 import RecordingPage from '../pages/RecordingPage'
-import RecordTesting from '../pages/RecordTesting'
 
 const router = createBrowserRouter([
   {
@@ -12,10 +11,9 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <HomePage /> },
       { path: 'about', element: <AboutPage /> },
-      { path: 'recording', element: <RecordingPage /> },
-      { path: 'record-testing', element: <RecordTesting /> },
     ],
   },
+  { path: '/recording', element: <RecordingPage /> },
 ])
 
 function Routes() {
