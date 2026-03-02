@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { apiUrl } from '../api'
 
-const API_BASE_URL = 'http://localhost:8000/api/ghl_integration/contacts/'
+const CONTACTS_API_URL = apiUrl('/api/ghl_integration/contacts/')
 const MIN_QUERY_LENGTH = 2
 
 function HomePage() {
@@ -50,7 +51,7 @@ function HomePage() {
         params.set('location_id', locationId.trim())
       }
 
-      const url = `${API_BASE_URL}?${params.toString()}`
+      const url = `${CONTACTS_API_URL}?${params.toString()}`
 
       fetch(url, { signal: controller.signal })
         .then(async (res) => {

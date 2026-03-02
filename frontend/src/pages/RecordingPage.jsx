@@ -2,9 +2,10 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useReactMediaRecorder } from 'react-media-recorder'
 import { Header, ContactInfoCard, RecordingControls, MicrophoneInput, Footer } from '../components/recording'
+import { apiUrl } from '../api'
 
-const CONTACTS_API_BASE = 'http://localhost:8000/api/ghl_integration/contacts/'
-const AUDIO_UPLOAD_URL = 'http://localhost:8000/api/audio/upload/'
+const CONTACTS_API_BASE = apiUrl('/api/ghl_integration/contacts/')
+const AUDIO_UPLOAD_URL = apiUrl('/api/audio/upload/')
 
 const formatDuration = (seconds) => {
   const h = Math.floor(seconds / 3600)
