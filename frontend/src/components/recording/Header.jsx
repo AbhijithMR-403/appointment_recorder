@@ -1,4 +1,4 @@
-function Header({ isRecording = true }) {
+function Header({ isRecording = true, isPaused = false }) {
   return (
     <header className="w-full max-w-[560px] md:max-w-[640px] flex items-center justify-between">
       <div className="flex items-center gap-3">
@@ -9,16 +9,24 @@ function Header({ isRecording = true }) {
           </svg>
         </div>
         <span className="text-lg md:text-xl font-semibold text-slate-800 tracking-tight">
-          MedRecord Bridge
+          Appointment Recording
         </span>
       </div>
-      {isRecording && (
+      {isRecording && !isPaused && (
         <div
           className="inline-flex items-center gap-2 text-[0.65rem] sm:text-xs font-semibold text-red-600 uppercase tracking-wide bg-red-50 px-2.5 sm:px-3 py-1 rounded-full whitespace-nowrap"
           aria-live="polite"
         >
           <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
           RECORDING
+        </div>
+      )}
+      {isPaused && (
+        <div
+          className="inline-flex items-center gap-2 text-[0.65rem] sm:text-xs font-semibold text-amber-700 uppercase tracking-wide bg-amber-50 px-2.5 sm:px-3 py-1 rounded-full whitespace-nowrap"
+          aria-live="polite"
+        >
+          PAUSED
         </div>
       )}
     </header>

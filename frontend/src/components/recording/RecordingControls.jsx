@@ -30,7 +30,11 @@ function RecordingControls({ onCancel, onPause, onNext, isRecording = true, isPa
         <button
           type="button"
           className="inline-flex items-center justify-center gap-2 px-4 md:px-5 py-2.5 rounded-[10px] text-sm font-semibold bg-red-100 text-red-600 border-none cursor-pointer transition-all duration-200 hover:bg-red-200 hover:-translate-y-px"
-          onClick={onCancel}
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            if (typeof onCancel === 'function') onCancel()
+          }}
           aria-label="Cancel recording"
         >
           <span className="flex items-center justify-center" aria-hidden="true">
@@ -45,8 +49,13 @@ function RecordingControls({ onCancel, onPause, onNext, isRecording = true, isPa
         </button>
         <button
           type="button"
-          className="inline-flex items-center justify-center gap-2 px-4 md:px-5 py-2.5 rounded-[10px] text-sm font-semibold bg-slate-100 text-slate-600 border-none cursor-pointer transition-all duration-200 hover:bg-slate-200 hover:-translate-y-px"
-          onClick={onPause}
+          className="inline-flex items-center justify-center gap-2 px-4 md:px-5 py-2.5 rounded-[10px] text-sm font-semibold bg-slate-100 text-slate-600 border-none cursor-pointer transition-all duration-200 hover:bg-slate-200 hover:-translate-y-px disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:bg-slate-100"
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            if (typeof onPause === 'function') onPause()
+          }}
+          disabled={!isRecording && !isPaused}
           aria-label={isPaused ? 'Resume recording' : 'Pause recording'}
         >
           <span className="flex items-center justify-center" aria-hidden="true">
@@ -66,7 +75,11 @@ function RecordingControls({ onCancel, onPause, onNext, isRecording = true, isPa
         <button
           type="button"
           className="inline-flex items-center justify-center gap-2 px-4 md:px-5 py-2.5 rounded-[10px] text-sm md:text-[0.9rem] font-semibold bg-blue-600 text-white border-none cursor-pointer transition-all duration-200 hover:bg-blue-700 hover:-translate-y-px"
-          onClick={onNext}
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            if (typeof onNext === 'function') onNext()
+          }}
           aria-label="Next"
         >
           <span className="flex items-center justify-center" aria-hidden="true">

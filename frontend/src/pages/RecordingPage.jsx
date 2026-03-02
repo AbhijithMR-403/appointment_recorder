@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useReactMediaRecorder } from 'react-media-recorder'
 import { Header, ContactInfoCard, RecordingControls, MicrophoneInput, Footer } from '../components/recording'
@@ -75,9 +75,11 @@ function RecordingPage() {
     }
   }, [hasAnyContactInfo, navigate])
 
-  // Start recording only when we have a resolved contact (from state or successful fetch)
+  // Start recording only once when we first have a resolved contact (prevents re-start on pause/stop)
+  const hasStartedRecordingRef = useRef(false)
   useEffect(() => {
-    if (!hasValidContact) return
+    if (!hasValidContact || hasStartedRecordingRef.current) return
+    hasStartedRecordingRef.current = true
     startRecording()
   }, [hasValidContact, startRecording])
 
@@ -159,7 +161,7 @@ function RecordingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-slate-200 px-3 sm:px-4 md:px-8 pt-4 sm:pt-6 md:pt-8 pb-6 sm:pb-8 md:pb-10 flex flex-col items-center gap-4 sm:gap-5 md:gap-7">
-      <Header isRecording={isRecording} />
+      <Header isRecording={isRecording} isPaused={isPaused} />
       <div className="w-full max-w-[560px] md:max-w-[640px] bg-white rounded-xl sm:rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.04)] px-4 sm:px-7 md:px-10 py-5 sm:py-8 md:py-9 flex flex-col gap-5 sm:gap-7 md:gap-8">
         <ContactInfoCard
           contactName={contactFullName}
