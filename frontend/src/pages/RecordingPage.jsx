@@ -142,9 +142,15 @@ function RecordingPage() {
     startRecording()
   }, [clearBlobUrl, startRecording])
 
+  const handleBackToContactSelection = useCallback(() => {
+    const hasRecording = isRecording || isPaused || mediaBlobUrl
+    if (hasRecording && !window.confirm('Leave this page? Your current recording will be discarded.')) return
+    navigate('/', { replace: true })
+  }, [isRecording, isPaused, mediaBlobUrl, navigate])
+
   if (!hasAnyContactInfo) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 pb-[env(safe-area-inset-bottom)]">
         <p className="text-sm text-slate-600">Redirecting to contact selection…</p>
       </div>
     )
@@ -152,7 +158,7 @@ function RecordingPage() {
 
   if (invalidContactId) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-slate-50 px-4">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-slate-50 px-4 pb-[env(safe-area-inset-bottom)]">
         <p className="text-lg font-semibold text-red-600">Invalid contact</p>
         <p className="text-sm text-slate-600 text-center max-w-md">
           No contact found for ID <strong className="font-mono text-slate-800">{contactIdFromQuery}</strong>. Please check the link or select a contact from the home page.
@@ -170,7 +176,7 @@ function RecordingPage() {
 
   if (contactStillLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 pb-[env(safe-area-inset-bottom)]">
         <p className="text-sm text-slate-600">Loading contact…</p>
       </div>
     )
@@ -185,8 +191,8 @@ function RecordingPage() {
   const contactId = resolvedContactId
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-slate-200 px-3 sm:px-4 md:px-8 pt-4 sm:pt-6 md:pt-8 pb-6 sm:pb-8 md:pb-10 flex flex-col items-center gap-4 sm:gap-5 md:gap-7">
-      <Header isRecording={isRecording} isPaused={isPaused} />
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-slate-200 px-3 sm:px-4 md:px-8 pt-4 sm:pt-6 md:pt-8 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pb-8 md:pb-10 flex flex-col items-center gap-4 sm:gap-5 md:gap-7">
+      <Header isRecording={isRecording} isPaused={isPaused} onBackToContactSelection={handleBackToContactSelection} />
       <div className="w-full max-w-[560px] md:max-w-[640px] bg-white rounded-xl sm:rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.04)] px-4 sm:px-7 md:px-10 py-5 sm:py-8 md:py-9 flex flex-col gap-5 sm:gap-7 md:gap-8">
         <ContactInfoCard
           contactName={contactFullName}
@@ -219,7 +225,7 @@ function RecordingPage() {
               <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-3">
                 <button
                   type="button"
-                  className="inline-flex items-center justify-center gap-2 px-4 md:px-5 py-2.5 rounded-[10px] text-sm font-semibold bg-slate-100 text-slate-600 border-none cursor-pointer transition-all duration-200 hover:bg-slate-200 hover:-translate-y-px"
+                  className="inline-flex items-center justify-center gap-2 min-h-[44px] px-4 md:px-5 py-2.5 rounded-[10px] text-sm font-semibold bg-slate-100 text-slate-600 border-none cursor-pointer transition-all duration-200 hover:bg-slate-200 hover:-translate-y-px active:scale-[0.98]"
                   onClick={handleBackToRecording}
                   aria-label="Back to recording"
                 >
@@ -232,7 +238,7 @@ function RecordingPage() {
                 </button>
                 <button
                   type="button"
-                  className="inline-flex items-center justify-center gap-2 px-4 md:px-5 py-2.5 rounded-[10px] text-sm md:text-[0.9rem] font-semibold bg-blue-600 text-white border-none cursor-pointer transition-all duration-200 hover:bg-blue-700 hover:-translate-y-px disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                  className="inline-flex items-center justify-center gap-2 min-h-[44px] px-4 md:px-5 py-2.5 rounded-[10px] text-sm md:text-[0.9rem] font-semibold bg-blue-600 text-white border-none cursor-pointer transition-all duration-200 hover:bg-blue-700 hover:-translate-y-px active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                   onClick={() => handleProceedSummarize(contactId)}
                   disabled={uploadStatus === 'uploading'}
                   aria-label="Proceed and summarize"
@@ -260,7 +266,7 @@ function RecordingPage() {
           )
         )}
       </div>
-      <Footer patientRecordId={contactId} version="v2.4.1" />
+      {/* <Footer patientRecordId={contactId} version="v2.4.1" /> */}
     </div>
   )
 }

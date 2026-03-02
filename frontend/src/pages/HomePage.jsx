@@ -89,9 +89,9 @@ function HomePage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-start pt-10 px-4 bg-slate-50">
-      <div className="w-full max-w-md bg-white rounded-xl shadow-md p-6 space-y-5">
-        <h1 className="text-xl font-semibold text-slate-900">Select contact to start recording</h1>
+    <div className="flex-1 flex flex-col items-center justify-start pt-6 sm:pt-10 px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+      <div className="w-full max-w-md bg-white rounded-xl sm:rounded-2xl shadow-md p-4 sm:p-6 space-y-5">
+        <h1 className="text-lg sm:text-xl font-semibold text-slate-900">Select contact to start recording</h1>
 
         <div className="space-y-2">
           <label className="block text-sm font-medium text-slate-700" htmlFor="location-id-input">
@@ -103,7 +103,7 @@ function HomePage() {
             value={locationId}
             onChange={(e) => setLocationId(e.target.value)}
             placeholder="Ylw5R20TuGK6NVbMXEkM"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full min-h-[44px] rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
           <p className="text-xs text-slate-400">
             If left empty, the search will not filter by location.
@@ -120,7 +120,7 @@ function HomePage() {
             value={nameQuery}
             onChange={(e) => setNameQuery(e.target.value)}
             placeholder="Type at least 2 characters"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full min-h-[44px] rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
           <p className="text-xs text-slate-400">
             Minimum {MIN_QUERY_LENGTH} characters. Results show contact ID and name.
@@ -146,7 +146,7 @@ function HomePage() {
                       key={c.id ?? c.contact_id}
                       type="button"
                       onClick={() => handleSelectContact(c)}
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-slate-100 focus:bg-slate-100 focus:outline-none"
+                      className="w-full min-h-[48px] text-left px-3 py-3 text-sm hover:bg-slate-100 focus:bg-slate-100 focus:outline-none"
                     >
                       <div className="font-medium text-slate-900">
                         {c.contact_id} &mdash; {fullName}
@@ -164,8 +164,7 @@ function HomePage() {
         </div>
 
         <p className="text-xs text-slate-500">
-          Select a contact from the list to continue. You cannot proceed to recording without a selected
-          contact.
+          Select a contact from the list to continue.
         </p>
       </div>
     </div>

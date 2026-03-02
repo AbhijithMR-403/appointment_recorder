@@ -10,7 +10,7 @@ function ContactInfoCard({ contactName = 'John Smith', appointmentType = 'Follow
     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
       <div className="flex items-center gap-3 sm:gap-4 min-w-0">
         <div
-          className="w-11 h-11 md:w-13 md:h-13 rounded-full bg-blue-100 text-blue-700 text-sm md:text-base font-semibold flex items-center justify-center shrink-0"
+          className="w-11 h-11 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full bg-blue-100 text-blue-700 text-sm md:text-base font-semibold flex items-center justify-center shrink-0"
           aria-hidden="true"
         >
           {initials}

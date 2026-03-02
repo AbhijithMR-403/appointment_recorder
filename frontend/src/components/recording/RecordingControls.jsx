@@ -29,7 +29,7 @@ function RecordingControls({ onCancel, onPause, onNext, isRecording = true, isPa
       <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-2 sm:gap-3 md:gap-4 w-full sm:w-auto">
         <button
           type="button"
-          className="inline-flex items-center justify-center gap-2 px-4 md:px-5 py-2.5 rounded-[10px] text-sm font-semibold bg-red-100 text-red-600 border-none cursor-pointer transition-all duration-200 hover:bg-red-200 hover:-translate-y-px"
+          className="inline-flex items-center justify-center gap-2 min-h-[44px] px-4 md:px-5 py-2.5 rounded-[10px] text-sm font-semibold bg-red-100 text-red-600 border-none cursor-pointer transition-all duration-200 hover:bg-red-200 hover:-translate-y-px active:scale-[0.98]"
           onClick={(e) => {
             e.preventDefault()
             e.stopPropagation()
@@ -49,7 +49,7 @@ function RecordingControls({ onCancel, onPause, onNext, isRecording = true, isPa
         </button>
         <button
           type="button"
-          className="inline-flex items-center justify-center gap-2 px-4 md:px-5 py-2.5 rounded-[10px] text-sm font-semibold bg-slate-100 text-slate-600 border-none cursor-pointer transition-all duration-200 hover:bg-slate-200 hover:-translate-y-px disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:bg-slate-100"
+          className="inline-flex items-center justify-center gap-2 min-h-[44px] px-4 md:px-5 py-2.5 rounded-[10px] text-sm font-semibold bg-slate-100 text-slate-600 border-none cursor-pointer transition-all duration-200 hover:bg-slate-200 hover:-translate-y-px active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:bg-slate-100"
           onClick={(e) => {
             e.preventDefault()
             e.stopPropagation()
@@ -74,7 +74,7 @@ function RecordingControls({ onCancel, onPause, onNext, isRecording = true, isPa
         </button>
         <button
           type="button"
-          className="inline-flex items-center justify-center gap-2 px-4 md:px-5 py-2.5 rounded-[10px] text-sm md:text-[0.9rem] font-semibold bg-blue-600 text-white border-none cursor-pointer transition-all duration-200 hover:bg-blue-700 hover:-translate-y-px"
+          className="inline-flex items-center justify-center gap-2 min-h-[44px] px-4 md:px-5 py-2.5 rounded-[10px] text-sm md:text-[0.9rem] font-semibold bg-blue-600 text-white border-none cursor-pointer transition-all duration-200 hover:bg-blue-700 hover:-translate-y-px active:scale-[0.98]"
           onClick={(e) => {
             e.preventDefault()
             e.stopPropagation()

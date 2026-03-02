@@ -5,6 +5,28 @@
   --color-blue-hover: #1d4ed8;
 }
 
+/* Mobile-first: safe areas and touch-friendly base */
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  min-height: 100dvh;
+  min-height: 100vh;
+  overflow-x: hidden;
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Touch devices: prevent zoom on input focus (iOS) and adequate tap targets */
+@media (pointer: coarse) {
+  input, select, textarea {
+    font-size: 16px;
+  }
+}
+
 @keyframes rec-glow {
   0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.35); }
   50% { box-shadow: 0 0 0 14px rgba(220, 38, 38, 0); }

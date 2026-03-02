@@ -1,16 +1,11 @@
-import { Outlet, Link } from 'react-router-dom'
+import { Outlet, Link, useLocation } from 'react-router-dom'
 
 function Layout() {
+  const location = useLocation()
+
   return (
-    <div>
-      <header>
-        <nav>
-          <Link to="/">Home</Link>
-          {' | '}
-          <Link to="/about">About</Link>
-        </nav>
-      </header>
-      <main>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
+      <main className="flex flex-col items-center justify-center w-full max-w-5xl px-4">
         <Outlet />
       </main>
     </div>
