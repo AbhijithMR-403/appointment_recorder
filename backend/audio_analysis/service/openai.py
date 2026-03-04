@@ -58,8 +58,6 @@ class OpenAISummarizer:
         print(f"Transcription text: {transcription_text}\n")
         print(f"Initial prompt: {initial_prompt}\n")
         print(f"Default prompt: {self.default_prompt}\n")
-        print(f"Prompt: {prompt}\n")
-        print(f"User content: {user_content}\n")
         print(f"Model name: {self.model_name}\n")
 
         prompt = initial_prompt or self.default_prompt
