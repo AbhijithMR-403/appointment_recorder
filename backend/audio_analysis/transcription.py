@@ -6,9 +6,9 @@ Submit a job and log it; transcript or failure is delivered via webhook callback
 
 import logging
 
-from openai import OpenAI
+from anthropic import Anthropic
 
-from .service.openai import OpenAISummarizer
+from .service.claudeai import ClaudeAISummarizer
 
 from .models import TranscriptionLog
 from .service.revai import RevAIClient
@@ -49,13 +49,13 @@ class TranscriptionService:
 
 def summarize_transcription(
     transcription_text: str,
-    openai_client: OpenAI | None = None,
+    anthropic_client: Anthropic | None = None,
     initial_prompt: str | None = None,
 ) -> str:
     """
-    Function wrapper around OpenAISummarizer for backward-compatible use.
+    Function wrapper around ClaudeAISummarizer for backward-compatible use.
     """
-    summarizer = OpenAISummarizer(openai_client=openai_client)
+    summarizer = ClaudeAISummarizer(anthropic_client=anthropic_client)
     return summarizer.summarize(
         transcription_text=transcription_text,
         initial_prompt=initial_prompt,
