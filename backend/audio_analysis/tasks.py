@@ -74,3 +74,6 @@ def analyze_transcription_task(job_id):
                 )
     except Exception as e:
         logger.exception("Failed to summarize transcript for job %s: %s", job_id, e)
+        log.status = TranscriptionLog.Status.FAILED
+        log.failure_reason = str(e)
+        log.save()
